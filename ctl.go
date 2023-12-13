@@ -14,10 +14,6 @@ type phi2 struct {
 	phi2 Phi
 }
 
-// type phiSimple1 struct {
-// 	Phi
-// }
-
 type (
 	AP      string
 	_PhiNot phi1
@@ -28,55 +24,59 @@ type (
 	PhiTrue struct{}
 )
 
+// Phi represents a CTL formula which can be validated on a Kripke structure
 type Phi interface {
 	valid(*Kripke, int) bool
 }
 
-func (phi AP) String() string {
-	return fmt.Sprintf("\"%v\"", string(phi))
+// p
+func (p AP) valid(K *Kripke, s int) bool {
+	_, ok := K.L[s][p]
+	return ok
+}
+
+func (p AP) String() string {
+	return fmt.Sprintf("\"%v\"", string(p))
+}
+
+// true
+func (phi PhiTrue) valid(K *Kripke, s int) bool {
+	return true
 }
 
 func (phi PhiTrue) String() string {
 	return "true"
 }
 
-func (phi _PhiNot) String() string {
-	return "¬(" + fmt.Sprint(phi.phi1) + ")"
-}
+// ¬ϕ
 
-func (phi PhiAnd) String() string {
-	return "(" + fmt.Sprint(phi.phi1) + " ∧ " + fmt.Sprint(phi.phi2) + ")"
-}
-
-func (phi PhiEX) String() string {
-	return "EX " + fmt.Sprint(phi.phi1)
-}
-
-func (phi PhiEU) String() string {
-	return "E(" + fmt.Sprint(phi.phi1) + " U " + fmt.Sprint(phi.phi2) + ")"
-}
-
-func (phi PhiAU) String() string {
-	return "A(" + fmt.Sprint(phi.phi1) + " U " + fmt.Sprint(phi.phi2) + ")"
-}
-
-func (phi PhiTrue) valid(K *Kripke, s int) bool {
-	return true
-}
-
-func (phi AP) valid(K *Kripke, s int) bool {
-	_, ok := K.L[s][phi]
-	return ok
-}
-
+// internal type
 func (phi _PhiNot) valid(K *Kripke, s int) bool {
 	return !phi.phi1.valid(K, s)
 }
 
+func (phi _PhiNot) String() string {
+	return fmt.Sprintf("¬(%v)", phi.phi1)
+}
+
+// public type, automatically collapses ¬¬ϕ into ϕ
+func PhiNot(phi1 Phi) Phi {
+	if phi, ok := phi1.(_PhiNot); ok {
+		return phi.phi1
+	}
+	return _PhiNot{phi1}
+}
+
+// ϕ ∧ ϕ
 func (phi PhiAnd) valid(K *Kripke, s int) bool {
 	return phi.phi1.valid(K, s) && phi.phi2.valid(K, s)
 }
 
+func (phi PhiAnd) String() string {
+	return fmt.Sprintf("(%v ∧ %v)", phi.phi1, phi.phi2)
+}
+
+// EX ϕ
 func (phi PhiEX) valid(K *Kripke, s int) bool {
 	if _, ok := K.cache[phi]; !ok {
 		phi.marking(K)
@@ -97,6 +97,11 @@ func (phi PhiEX) marking(K *Kripke) {
 	}
 }
 
+func (phi PhiEX) String() string {
+	return fmt.Sprintf("EX(%v)", phi.phi1)
+}
+
+// E (ϕ U ϕ)
 func (phi PhiEU) valid(K *Kripke, s int) bool {
 	if _, ok := K.cache[phi]; !ok {
 		phi.marking(K)
@@ -127,6 +132,11 @@ func (phi PhiEU) marking(K *Kripke) {
 	}
 }
 
+func (phi PhiEU) String() string {
+	return fmt.Sprintf("E(%v U %v)", phi.phi1, phi.phi2)
+}
+
+// A (ϕ U ϕ)
 func (phi PhiAU) valid(K *Kripke, s int) bool {
 	if _, ok := K.cache[phi]; !ok {
 		phi.marking(K)
@@ -160,6 +170,27 @@ func (phi PhiAU) marking(K *Kripke) {
 	}
 }
 
+func (phi PhiAU) String() string {
+	return fmt.Sprintf("A(%v U %v)", phi.phi1, phi.phi2)
+}
+
+// Non-basic operators
+func PhiOr(phi1, phi2 Phi) Phi {
+	return PhiNot(PhiAnd{PhiNot(phi1), PhiNot(phi2)})
+}
+
+func PhiAG(phi1 Phi) Phi {
+	return PhiNot(PhiEU{PhiTrue{}, PhiNot(phi1)})
+}
+
+func PhiAF(phi1 Phi) Phi {
+	return PhiAU{PhiTrue{}, phi1}
+}
+
+func PhiImpl(phi1, phi2 Phi) Phi {
+	return PhiOr(PhiNot(phi1), phi2)
+}
+
 type Kripke struct {
 	S0    []int
 	R     [][]int
@@ -184,29 +215,6 @@ func MakeKripke(n int, s0 []int, r [][]int, l map[int]map[AP]bool) *Kripke {
 	return &K
 }
 
-func PhiNot(phi1 Phi) Phi {
-	if phi, ok := phi1.(_PhiNot); ok {
-		return phi.phi1
-	}
-	return _PhiNot{phi1}
-}
-
-func PhiOr(phi1, phi2 Phi) Phi {
-	return PhiNot(PhiAnd{PhiNot(phi1), PhiNot(phi2)})
-}
-
-func PhiAG(phi1 Phi) Phi {
-	return PhiNot(PhiEU{PhiTrue{}, PhiNot(phi1)})
-}
-
-func PhiAF(phi1 Phi) Phi {
-	return PhiAU{PhiTrue{}, phi1}
-}
-
-func PhiImpl(phi1, phi2 Phi) Phi {
-	return PhiOr(PhiNot(phi1), phi2)
-}
-
 func main() {
 	K := MakeKripke(
 		7,
@@ -220,5 +228,4 @@ func main() {
 	phi := PhiAG(PhiImpl(AP("start"), PhiAF(AP("heat"))))
 	log.Println(phi)
 	log.Println(phi.valid(K, K.S0[0]))
-	log.Println(K.cache)
 }
