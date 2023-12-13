@@ -86,7 +86,7 @@ func (phi PhiEX) valid(K *Kripke, s int) bool {
 }
 
 func (phi PhiEX) marking(K *Kripke) {
-	K.cache[phi] = make(map[int]bool)
+	K.cache[phi] = map[int]bool{}
 	for s := range K.R {
 		for _, t := range K.R[s] {
 			if phi.phi1.valid(K, t) {
@@ -111,9 +111,9 @@ func (phi PhiEU) valid(K *Kripke, s int) bool {
 }
 
 func (phi PhiEU) marking(K *Kripke) {
-	K.cache[phi] = make(map[int]bool)
-	open := make([]int, 0)
-	closed := make(map[int]bool)
+	K.cache[phi] = map[int]bool{}
+	open := []int{}
+	closed := map[int]bool{}
 	for s := range K.R {
 		if phi.phi2.valid(K, s) {
 			open = append(open, s)
@@ -146,9 +146,9 @@ func (phi PhiAU) valid(K *Kripke, s int) bool {
 }
 
 func (phi PhiAU) marking(K *Kripke) {
-	K.cache[phi] = make(map[int]bool)
+	K.cache[phi] = map[int]bool{}
 	nb := make([]int, len(K.R))
-	open := make([]int, 0)
+	open := []int{}
 	for s := range K.R {
 		nb[s] = len(K.R[s])
 		if phi.phi2.valid(K, s) {
@@ -200,11 +200,14 @@ type Kripke struct {
 }
 
 func MakeKripke(n int, s0 []int, r [][]int, l map[int]map[AP]bool) *Kripke {
+	if len(r) != n {
+		log.Fatal("Kripke Structure must be total.")
+	}
 	K := Kripke{
 		S0:    s0,
 		R:     r,
 		L:     l,
-		cache: make(map[Phi]map[int]bool),
+		cache: map[Phi]map[int]bool{},
 	}
 	K.pred = make([][]int, n)
 	for s := range K.R {
@@ -226,6 +229,9 @@ func main() {
 	)
 
 	phi := PhiAG(PhiImpl(AP("start"), PhiAF(AP("heat"))))
-	log.Println(phi)
+	for i := 0; i < 10000; i++ {
+		K.cache = map[Phi]map[int]bool{}
+		phi.valid(K, K.S0[0])
+	}
 	log.Println(phi.valid(K, K.S0[0]))
 }
