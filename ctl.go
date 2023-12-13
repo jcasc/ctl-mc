@@ -199,17 +199,14 @@ type Kripke struct {
 	cache map[Phi]map[int]bool
 }
 
-func MakeKripke(n int, s0 []int, r [][]int, l map[int]map[AP]bool) *Kripke {
-	if len(r) != n {
-		log.Fatal("Kripke Structure must be total.")
-	}
+func MakeKripke(s0 []int, r [][]int, l map[int]map[AP]bool) *Kripke {
 	K := Kripke{
 		S0:    s0,
 		R:     r,
 		L:     l,
 		cache: map[Phi]map[int]bool{},
 	}
-	K.pred = make([][]int, n)
+	K.pred = make([][]int, len(K.R))
 	for s := range K.R {
 		for _, t := range K.R[s] {
 			K.pred[t] = append(K.pred[t], s)
@@ -220,7 +217,6 @@ func MakeKripke(n int, s0 []int, r [][]int, l map[int]map[AP]bool) *Kripke {
 
 func main() {
 	K := MakeKripke(
-		7,
 		[]int{0},
 		[][]int{{1, 2}, {4}, {5, 0}, {2, 0, 3}, {1, 2}, {6}, {3}},
 		map[int]map[AP]bool{
