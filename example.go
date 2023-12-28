@@ -7,8 +7,14 @@ import (
 )
 
 func main() {
-	K := ctlmc.ReadKripke("kripke.json")
-	phi, _ := ctlmc.ParseCTL("AG(-\"start\"oAF\"heat\")")
+	K, err := ctlmc.ReadKripke("kripke.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+	phi, err := ctlmc.ParseCTL("AG(-\"start\"+AF\"heat\")")
+	if err != nil {
+		log.Fatalf("failed parsing CTL formula: %v", err)
+	}
 	log.Println(phi)
 	log.Println(K.Satisfies(phi))
 	log.Printf("%v", K)

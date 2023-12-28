@@ -3,7 +3,6 @@ package ctlmc
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"regexp"
 	"strings"
@@ -283,6 +282,9 @@ func MakeKripke(s []string, s0 []int, r [][]int, l map[int]map[AP]bool) *Kripke 
 	return &K
 }
 
+const AND_RUNE = '*'
+const OR_RUNE = '+'
+
 func parseCTL(s string, i int) (Phi, int, error) {
 	if i >= len(s) {
 		return nil, i, fmt.Errorf("unexpected end of input at %v", i)
@@ -323,16 +325,16 @@ func parseCTL(s string, i int) (Phi, int, error) {
 				return nil, i, fmt.Errorf("unterminated parantheses block starting at %v", i)
 			} else if s[next] == ')' {
 				return phi1, next + 1, nil
-			} else if s[next] == 'a' || s[next] == 'o' {
+			} else if s[next] == AND_RUNE || s[next] == OR_RUNE {
 				if phi2, end, err := parseCTL(s, next+1); err != nil {
 					return nil, end, err
 				} else {
 					if end >= len(s) || s[end] != ')' {
 						return nil, i, fmt.Errorf("unterminated con-/disjunction block starting at %v", i)
 					}
-					if s[next] == 'a' {
+					if s[next] == AND_RUNE {
 						return PhiAnd{phi1, phi2}, end + 1, nil
-					} else { // o
+					} else { // OR_RUNE
 						return PhiOr(phi1, phi2), end + 1, nil
 					}
 				}
@@ -421,23 +423,26 @@ func ParseCTL(s string) (Phi, error) {
 	}
 }
 
-func ReadKripke(path string) *Kripke {
-	type KripkeJson struct {
+func ReadKripke(path string) (*Kripke, error) {
+	var msg struct {
 		S0 []string
 		R  map[string][]string
 		L  map[string][]string
 	}
-	var msg KripkeJson
 
 	infile, err := os.Open(path)
 	if err != nil {
-		log.Fatalf("failed to parse Kripke structure from json: %v", err)
+		return nil, fmt.Errorf("failed to parse Kripke structure from json: %v", err)
 	}
-	defer infile.Close()
+	defer func() {
+		if err := infile.Close(); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+		}
+	}()
 
 	dec := json.NewDecoder(infile)
 	if err := dec.Decode(&msg); err != nil {
-		log.Fatalf("failed to parse Kripke structure from json: %v", err)
+		return nil, fmt.Errorf("failed to parse Kripke structure from json: %v", err)
 	}
 
 	S0 := make([]int, len(msg.S0))
@@ -452,25 +457,36 @@ func ReadKripke(path string) *Kripke {
 		S = append(S, k)
 	}
 
-	for k, s := range msg.S0 {
-		S0[k] = nameIdxs[s]
+	for k, v := range msg.S0 {
+		s, ok := nameIdxs[v]
+		if !ok {
+			return nil, fmt.Errorf("initial state %v does not appear in transition relation's domain", v)
+		}
+		S0[k] = s
 	}
 
 	for k, vs := range msg.R {
 		s := nameIdxs[k]
 		R[s] = make([]int, len(vs))
-		for k, v := range vs {
-			R[s][k] = nameIdxs[v]
+		for i, v := range vs {
+			t, ok := nameIdxs[v]
+			if !ok {
+				return nil, fmt.Errorf("transition (%v -> %v) is malformed: %v does not appear in transition relation's domain", k, v, v)
+			}
+			R[s][i] = t
 		}
 	}
 
 	for k, vs := range msg.L {
-		s := nameIdxs[k]
+		s, ok := nameIdxs[k]
+		if !ok {
+			return nil, fmt.Errorf("labeled state %v does not appear in transition relation's domain", k)
+		}
 		L[s] = make(map[AP]bool)
 		for _, v := range vs {
 			L[s][AP(v)] = true
 		}
 	}
 
-	return MakeKripke(S, S0, R, L)
+	return MakeKripke(S, S0, R, L), nil
 }
