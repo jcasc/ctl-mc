@@ -29,6 +29,10 @@ Formulas can be parsed using the provided function from the following syntax:
 ψ ::= Xϕ | Fϕ | Gϕ | (ϕ U ϕ) | (ϕ W ϕ) | (ϕ R ϕ) | (ϕ S ϕ)
 ```
 
+where `p` is a `"`-delimited string. The parantheses delimiting the subformulas of operators taking two operands are mandatory!
+The trivial sub-formulas `true` and `false` are *not* quote-delimited.
+Whitespace is ignored entirely, even within AP-strings.
+
 The common CTL semantics apply, where:
 ```
 - = NOT
@@ -39,11 +43,6 @@ W = Weak Until
 R = Release
 S = Strong Release
 ```
-
-
-where `p` is a `"`-delimited string. The parantheses delimiting the subformulas of operators taking two operands are mandatory!
-The trivial sub-formulas `true` and `false` are *not* quote-delimited.
-Whitespace is ignored entirely, even within AP-strings.
 
 Internally, formulas as represented as a tree structure of subformulas of the equivalent formula of "basic" CTL logic in which quantor-modalities are limited to `EX`, `EU` and `AU`.
 
