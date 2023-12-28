@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	. "github.com/jcasc/ctl-mc/ctlmc"
 )
 
@@ -23,9 +25,9 @@ func main() {
 	for i := 0; i < len(K.R); i++ {
 		K.R[0] = append(K.R[0], i)
 	}
-	phi := PhiAG(PhiImpl(AP("start"), PhiAF(AP("heat"))))
-	for i := 0; i < 100000; i++ {
-		K.Clear()
-		phi.Valid(K, K.S0[0])
-	}
+	phi_ := PhiAG(PhiImpl(AP("start"), PhiAF(AP("heat"))))
+	phi, _ := ParseCTL("A                      G(-\"start\"oAF\"heat\")")
+	log.Println(phi)
+	log.Println(phi == phi_)
+	log.Println(K.Satisfies(phi))
 }
