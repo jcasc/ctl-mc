@@ -11,4 +11,5 @@ func main() {
 	phi, _ := ctlmc.ParseCTL("AG(-\"start\"oAF\"heat\")")
 	log.Println(phi)
 	log.Println(K.Satisfies(phi))
+	log.Printf("%v", K)
 }

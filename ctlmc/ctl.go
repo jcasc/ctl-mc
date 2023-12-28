@@ -245,6 +245,7 @@ func PhiImpl(phi1, phi2 Phi) Phi {
 }
 
 type Kripke struct {
+	S     []string
 	S0    []int
 	R     [][]int
 	L     map[int]map[AP]bool
@@ -265,8 +266,9 @@ func (K *Kripke) Satisfies(phi Phi) bool {
 	return true
 }
 
-func MakeKripke(s0 []int, r [][]int, l map[int]map[AP]bool) *Kripke {
+func MakeKripke(s []string, s0 []int, r [][]int, l map[int]map[AP]bool) *Kripke {
 	K := Kripke{
+		S:     s,
 		S0:    s0,
 		R:     r,
 		L:     l,
@@ -421,9 +423,9 @@ func ParseCTL(s string) (Phi, error) {
 
 func ReadKripke(path string) *Kripke {
 	type KripkeJson struct {
-		S0 []int
-		R  map[int][]int
-		L  map[int][]string
+		S0 []string
+		R  map[string][]string
+		L  map[string][]string
 	}
 	var msg KripkeJson
 
@@ -438,16 +440,37 @@ func ReadKripke(path string) *Kripke {
 		log.Fatalf("failed to parse Kripke structure from json: %v", err)
 	}
 
+	S0 := make([]int, len(msg.S0))
 	R := make([][]int, len(msg.R))
-	L := make(map[int]map[AP]bool)
-	for k, v := range msg.R {
-		R[k] = v
+	L := make(map[int]map[AP]bool, len(msg.L))
+
+	nameIdxs := make(map[string]int, len(msg.R))
+	S := make([]string, 0, len(msg.R))
+	for k := range msg.R {
+		i := len(S)
+		nameIdxs[k] = i
+		S = append(S, k)
 	}
-	for k, vs := range msg.L {
-		L[k] = make(map[AP]bool)
-		for _, v := range vs {
-			L[k][AP(v)] = true
+
+	for k, s := range msg.S0 {
+		S0[k] = nameIdxs[s]
+	}
+
+	for k, vs := range msg.R {
+		s := nameIdxs[k]
+		R[s] = make([]int, len(vs))
+		for k, v := range vs {
+			R[s][k] = nameIdxs[v]
 		}
 	}
-	return MakeKripke(msg.S0, R, L)
+
+	for k, vs := range msg.L {
+		s := nameIdxs[k]
+		L[s] = make(map[AP]bool)
+		for _, v := range vs {
+			L[s][AP(v)] = true
+		}
+	}
+
+	return MakeKripke(S, S0, R, L)
 }
