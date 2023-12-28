@@ -1,4 +1,4 @@
-# A CTL (Computation Tree Logic) Model Checker written in go
+# A CTL (Computation Tree Logic) Model Checker
 
 ## Kripke Structures
 
