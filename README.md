@@ -1,4 +1,5 @@
-# A CTL (Computation Tree Logic) Model Checker
+# About
+ctl-mc is a CTL ([Computation Tree Logic](https://en.wikipedia.org/wiki/Computation_tree_logic)) Model Checker written in go.
 
 ## Kripke Structures
 
