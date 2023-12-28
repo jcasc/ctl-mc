@@ -1,7 +1,10 @@
 package ctlmc
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
+	"os"
 	"regexp"
 	"strings"
 )
@@ -414,4 +417,37 @@ func ParseCTL(s string) (Phi, error) {
 	} else {
 		return phi, nil
 	}
+}
+
+func ReadKripke(path string) *Kripke {
+	type KripkeJson struct {
+		S0 []int
+		R  map[int][]int
+		L  map[int][]string
+	}
+	var msg KripkeJson
+
+	infile, err := os.Open(path)
+	if err != nil {
+		log.Fatalf("failed to parse Kripke structure from json: %v", err)
+	}
+	defer infile.Close()
+
+	dec := json.NewDecoder(infile)
+	if err := dec.Decode(&msg); err != nil {
+		log.Fatalf("failed to parse Kripke structure from json: %v", err)
+	}
+
+	R := make([][]int, len(msg.R))
+	L := make(map[int]map[AP]bool)
+	for k, v := range msg.R {
+		R[k] = v
+	}
+	for k, vs := range msg.L {
+		L[k] = make(map[AP]bool)
+		for _, v := range vs {
+			L[k][AP(v)] = true
+		}
+	}
+	return MakeKripke(msg.S0, R, L)
 }
