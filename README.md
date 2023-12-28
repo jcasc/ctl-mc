@@ -3,14 +3,14 @@ ctl-mc is a CTL ([Computation Tree Logic](https://en.wikipedia.org/wiki/Computat
 
 ## Kripke Structures
 
-The following definition of Krikpe structure is used:
+The following definition of Kripke structure is used:
 A Krikpe structure K is a tuple (S, S_0, R, L) where
 - S is the set of states
 - S_0 is the set of initial states
 - R is the left-total transition relation
 - L is the labeling function S->2^AP where AP is the set of Atomic Propositions
 
-Krikpe structures are read from a json file with 3 top-level keys `S0`, `R`, and `L` where
+Kripke structures are read from a json file with 3 top-level keys `S0`, `R`, and `L` where
 - R is a json object mapping each state (as string) to an array of successor states in the total (!) transition relation
 - R implicitly defines S as the set of R's keys
 - S0 is the array of initial states (as strings)
