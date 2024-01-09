@@ -34,8 +34,7 @@ type Phi interface {
 
 // p
 func (p AP) Check(K *Kripke, s int) bool {
-	_, ok := K.L[s][p]
-	return ok
+	return K.L[s][p]
 }
 
 func (p AP) String() string {
@@ -89,8 +88,7 @@ func (phi PhiEX) Check(K *Kripke, s int) bool {
 	if _, ok := K.cache[phi]; !ok {
 		phi.marking(K)
 	}
-	_, ok := K.cache[phi][s]
-	return ok
+	return K.cache[phi][s]
 }
 
 func (phi PhiEX) marking(K *Kripke) {
@@ -114,8 +112,7 @@ func (phi PhiEU) Check(K *Kripke, s int) bool {
 	if _, ok := K.cache[phi]; !ok {
 		phi.marking(K)
 	}
-	_, ok := K.cache[phi][s]
-	return ok
+	return K.cache[phi][s]
 }
 
 func (phi PhiEU) marking(K *Kripke) {
@@ -133,7 +130,7 @@ func (phi PhiEU) marking(K *Kripke) {
 		open = open[1:]
 		K.cache[phi][cur] = true
 		for _, pred := range K.pred[cur] {
-			if _, ok := seen[pred]; !ok && phi.phi1.Check(K, pred) {
+			if !seen[pred] && phi.phi1.Check(K, pred) {
 				seen[pred] = true
 				open = append(open, pred)
 			}
@@ -150,8 +147,7 @@ func (phi PhiAU) Check(K *Kripke, s int) bool {
 	if _, ok := K.cache[phi]; !ok {
 		phi.marking(K)
 	}
-	_, ok := K.cache[phi][s]
-	return ok
+	return K.cache[phi][s]
 }
 
 func (phi PhiAU) marking(K *Kripke) {
