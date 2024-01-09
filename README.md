@@ -1,15 +1,16 @@
-# A CTL (Computation Tree Logic) Model Checker written in go
+# About
+ctl-mc is a CTL ([Computation Tree Logic](https://en.wikipedia.org/wiki/Computation_tree_logic)) Model Checker written in go.
 
 ## Kripke Structures
 
-The following definition of Krikpe structure is used:
+The following definition of Kripke structure is used:
 A Krikpe structure K is a tuple (S, S_0, R, L) where
 - S is the set of states
 - S_0 is the set of initial states
 - R is the left-total transition relation
 - L is the labeling function S->2^AP where AP is the set of Atomic Propositions
 
-Krikpe structures are read from a json file with 3 top-level keys `S0`, `R`, and `L` where
+Kripke structures are read from a json file with 3 top-level keys `S0`, `R`, and `L` where
 - R is a json object mapping each state (as string) to an array of successor states in the total (!) transition relation
 - R implicitly defines S as the set of R's keys
 - S0 is the array of initial states (as strings)
@@ -28,6 +29,10 @@ Formulas can be parsed using the provided function from the following syntax:
 ψ ::= Xϕ | Fϕ | Gϕ | (ϕ U ϕ) | (ϕ W ϕ) | (ϕ R ϕ) | (ϕ S ϕ)
 ```
 
+where `p` is a `"`-delimited string. The parantheses delimiting the subformulas of operators taking two operands are mandatory!
+The trivial sub-formulas `true` and `false` are *not* quote-delimited.
+Whitespace is ignored entirely, even within AP-strings.
+
 The common CTL semantics apply, where:
 ```
 - = NOT
@@ -38,11 +43,6 @@ W = Weak Until
 R = Release
 S = Strong Release
 ```
-
-
-where `p` is a `"`-delimited string. The parantheses delimiting the subformulas of operators taking two operands are mandatory!
-The trivial sub-formulas `true` and `false` are *not* quote-delimited.
-Whitespace is ignored entirely, even within AP-strings.
 
 Internally, formulas as represented as a tree structure of subformulas of the equivalent formula of "basic" CTL logic in which quantor-modalities are limited to `EX`, `EU` and `AU`.
 
